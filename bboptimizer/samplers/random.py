@@ -8,7 +8,7 @@ class RandomSampler(BaseSampler):
     def sample(self, num_samples=1, *args, **kwargs):
         Xs = []
         for i in range(num_samples):
-            x = random_sample(self.design_space.config_space_expanded)
+            x = random_sample(self.params_conf)
             Xs.append(x)
         return Xs
 

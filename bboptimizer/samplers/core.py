@@ -1,6 +1,5 @@
 from abc import ABCMeta, abstractmethod
 from copy import deepcopy
-import numpy as np
 
 from ..space import DesignSpace
 from .utils import register
@@ -27,7 +26,11 @@ class BaseSampler(object, metaclass=ABCMeta):
     def sample(self, *args, **kwargs):
         raise NotImplementedError()
 
-    def update(self, new_X, new_y):
+    def update(self, new_X=None, new_y=None):
+        if new_X is None:
+            new_X = []
+        if new_y is None:
+            new_y = []
         self._X.extend(new_X)
         self._y.extend(new_y)
         self._update(new_X, new_y)
@@ -40,23 +43,10 @@ class BaseSampler(object, metaclass=ABCMeta):
     def data(self):
         return self._X, self._y
 
-    def params2vec(self, params):
-        # Not include fixed params
-        vec = []
-        for conf in self.params_conf:
-            val = params[conf['name']]
-            v = param2opt_space(val, conf['type'], conf["domain"])
-            vec.append(v)
-        return np.array(vec)
+    @property
+    def num_data(self):
+        return len(self._X)
 
-    def vec2params(self, vec):
-        # Not include fixed params
-        params = {}
-        vec = self._design_space.model_to_objective(vec)
-        for i, val in enumerate(vec):
-            conf = self._design_space.config_space_expanded[i]
-            if "scale" in conf and conf["scale"] == "log":
-                val = 10 ** val
-            if "is_integer" in conf and conf["is_integer"]:
-                val = int(val)
-        return params
+    @property
+    def params_conf(self):
+        return self.design_space.config_space_expanded

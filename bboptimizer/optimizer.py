@@ -49,11 +49,13 @@ class Optimizer(object):
             for param in init_X:
                 for fixed_name in self.fixed_params.keys():
                     del param[fixed_name]
-        self._sampler = SAMPLERS_MAP[sampler](space, init_X, init_y)
+        self.sampler = SAMPLERS_MAP[sampler](self._nonfixed_conf,
+                                             init_X, init_y,
+                                             *args, **kwargs)
 
     def search(self, return_full=False, num_iter=10, *args, **kwargs):
         for i in range(num_iter):
-            Xs = self._sampler.sample(*args, **kwargs)
+            Xs = self.sampler.sample(*args, **kwargs)
             sucess_Xs = []
             ys = []
             for X in Xs:
@@ -65,8 +67,8 @@ class Optimizer(object):
                     print(e)
                     print("Try different configuration")
                     continue
-            self._sampler.update(sucess_Xs, ys)
-        Xs, ys = self._sampler.data
+            self.sampler.update(sucess_Xs, ys)
+        Xs, ys = self.sampler.data
         # Update with  fixed parameters
         fixed_params = deepcopy(self.fixed_params)
         for X in Xs:
@@ -81,6 +83,7 @@ class Optimizer(object):
 
     def score_func(self, X, *args, **kwargs):
         fixed_params = deepcopy(self.fixed_params)
+        X = deepcopy(X)
         X.update(fixed_params)
 
         def record(que):
