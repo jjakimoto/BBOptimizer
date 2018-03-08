@@ -2,12 +2,14 @@
 # @Author: tom-hydrogen
 # @Date:   2018-03-07 10:51:02
 # @Last Modified by:   tom-hydrogen
-# @Last Modified time: 2018-03-08 15:11:13
+# @Last Modified time: 2018-03-08 14:36:47
 """ gp.py
 Bayesian optimisation of loss functions.
 """
 import numpy as np
 from scipy.optimize import minimize
+import GPy
+from GPy.models import GPRegression, SparseGPRegression
 from copy import deepcopy
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import Matern
@@ -36,7 +38,7 @@ class BayesSampler(BaseSampler):
         self._optimizer = optimizer
         self._max_iters = max_iters
 
-    def _update(self, new_X, new_y, eps=EPSILON):
+    def _update(self, new_X, new_y):
         X, y = self.data
         X = deepcopy(X)
         y = deepcopy(y)
@@ -45,17 +47,41 @@ class BayesSampler(BaseSampler):
             y = np.array(y)
             if self._is_normalize:
                 sig = np.sqrt(np.var(y))
-                sig = max(sig, eps)
                 mu = np.mean(y)
                 y = (y - mu) / sig
-            random_state = 0
-            self.model = GaussianProcessRegressor(
-                kernel=Matern(nu=2.5),
-                n_restarts_optimizer=25,
-                random_state=random_state,
-                normalize_y=False
-            )
-            self.model.fit(X_vec, y)
+            y = np.array(y)[:, None]
+            if self.model is None:
+                self._create_model(X_vec, y)
+            else:
+                self.model.set_XY(X_vec, y)
+            self.model.optimize(optimizer=self._optimizer,
+                                max_iters=self._max_iters,
+                                messages=False,
+                                ipython_notebook=False)
+
+    def _create_model(self, X, Y):
+        """
+        Creates the model given some input data X and Y.
+        """
+
+        # Define kernel
+        self.input_dim = X.shape[1]
+        if self._kernel is None:
+            kern = GPy.kern.Matern52(self.input_dim, variance=1.,
+                                     ARD=self._ARD)
+        else:
+            kern = self._kernel
+            self._kernel = None
+
+        # Define model
+        noise_var = Y.var() * 0.01
+        if not self._sparse:
+            self.model = GPRegression(X, Y, kernel=kern,
+                                      noise_var=noise_var)
+        else:
+            self.model = SparseGPRegression(X, Y, kernel=kern,
+                                            num_inducing=self._num_inducing)
+        self.model.Gaussian_noise.constrain_bounded(1e-9, 1e6, warning=False)
 
     def sample(self, num_samples=1, *args, **kwargs):
         _num_data = self.num_data
@@ -70,8 +96,8 @@ class BayesSampler(BaseSampler):
         init_params = self._random_sample(num_restarts)
         init_xs = [self.params2vec(param) for param in init_params]
         bounds = self.design_space.get_bounds()
-        # evaluated_loss = np.array(self.model.Y)[:, 0]
-        evaluated_loss = np.array(self.model.y_train_)
+        print("bounds", bounds)
+        evaluated_loss = np.array(self.model.Y)[:, 0]
         ys = []
         xs = []
 
@@ -86,6 +112,8 @@ class BayesSampler(BaseSampler):
                            method='L-BFGS-B')
             ys.append(-res.fun)
             xs.append(res.x)
+            print("max_ei", -res.fun, self.model.predict(np.array([res.x])))
+        print("##############best_ei", np.max(ys))
         idx = np.argsort(ys)[::-1][:num_samples]
         best_x = np.array(xs)[idx]
         best_params = [self.vec2params(x) for x in best_x]

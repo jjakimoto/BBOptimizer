@@ -2,7 +2,6 @@ from collections import defaultdict
 import numpy as np
 import random
 from scipy.stats import norm
-from scipy.special import erfc
 
 
 SAMPLERS_MAP = dict()
@@ -86,10 +85,13 @@ def expected_improvement(x, model, evaluated_loss, jitter=0.01):
     """
 
     x = np.atleast_2d(x)
-    mu, var = model.predict(x)
+    # mu, var = model.predict(x)
     # Consider 1d case
-    sigma = np.sqrt(var)[0, 0]
-    mu = mu[0, 0]
+    # sigma = np.sqrt(var)[0, 0]
+    # mu = mu[0, 0]
+    mu, sig = model.predict(x, return_std=True)
+    mu = mu[0]
+    sigma = sig[0]
     # Avoid too small sigma
     if sigma == 0.:
         return 0.
