@@ -1,0 +1,2 @@
+EPSILON = 1e-8
+RANDOM_STATE = 0

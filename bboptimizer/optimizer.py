@@ -1,9 +1,13 @@
 from copy import deepcopy
 import numpy as np
 from multiprocessing import Process, Queue
+from tqdm import tqdm
 
 from .exceptions import TimelimitError
 from .samplers.utils import SAMPLERS_MAP
+
+import warnings
+warnings.filterwarnings("ignore")
 
 
 class Optimizer(object):
@@ -53,8 +57,13 @@ class Optimizer(object):
                                              init_X, init_y,
                                              *args, **kwargs)
 
-    def search(self, return_full=False, num_iter=10, *args, **kwargs):
-        for i in range(num_iter):
+    def search(self, return_full=False, num_iter=10, is_display=True,
+               *args, **kwargs):
+        if is_display:
+            iteration = tqdm(range(num_iter))
+        else:
+            iteration = range(num_iter)
+        for i in iteration:
             Xs = self.sampler.sample(*args, **kwargs)
             sucess_Xs = []
             ys = []

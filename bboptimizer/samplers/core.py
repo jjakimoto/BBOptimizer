@@ -6,7 +6,7 @@ from .utils import register
 
 
 class BaseSampler(object, metaclass=ABCMeta):
-    def __init__(self, space, init_X=None, init_y=None):
+    def __init__(self, space, init_X=None, init_y=None, *args, **kwargs):
         self._space = deepcopy(space)
         self.design_space = DesignSpace(space)
         if init_X is None:

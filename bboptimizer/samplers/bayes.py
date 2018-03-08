@@ -10,15 +10,18 @@ import numpy as np
 from scipy.optimize import minimize
 import GPy
 from GPy.models import GPRegression, SparseGPRegression
+from copy import deepcopy
 
 from .core import BaseSampler
 from .utils import random_sample, expected_improvement
+from ..constants import EPSILON
 
 
 class BayesSampler(BaseSampler):
     sampler_name = "bayes"
 
     def __init__(self, space, init_X=None, init_y=None, r_min=3, method="EI",
+                 optimizer="bfgs", max_iters=1000,
                  is_normalize=True, ARD=True, kernel=None, sparse=False,
                  num_inducing=10):
         super(BayesSampler, self).__init__(space, init_X, init_y)
@@ -30,9 +33,13 @@ class BayesSampler(BaseSampler):
         self._kernel = kernel
         self._sparse = sparse
         self._num_inducing = num_inducing
+        self._optimizer = optimizer
+        self._max_iters = max_iters
 
-    def _update(self, new_X, new_y, eps=1e-5):
+    def _update(self, new_X, new_y, eps=EPSILON):
         X, y = self.data
+        X = deepcopy(X)
+        y = deepcopy(y)
         if len(X) >= self._r_min:
             X_vec = np.array([self.params2vec(x) for x in X])
             y = np.array(y)[:, None]
@@ -41,10 +48,15 @@ class BayesSampler(BaseSampler):
                 sig = max(sig, eps)
                 mu = np.mean(y)
                 y = (y - mu) / sig
+            print("y", y)
             if self.model is None:
                 self._create_model(X_vec, y)
             else:
                 self.model.set_XY(X_vec, y)
+            self.model.optimize(optimizer=self._optimizer,
+                                max_iters=self._max_iters,
+                                messages=False,
+                                ipython_notebook=False)
 
     def _create_model(self, X, Y):
         """
@@ -64,10 +76,10 @@ class BayesSampler(BaseSampler):
         noise_var = Y.var() * 0.01
         if not self._sparse:
             self.model = GPRegression(X, Y, kernel=kern,
-                                       noise_var=noise_var)
+                                      noise_var=noise_var)
         else:
             self.model = SparseGPRegression(X, Y, kernel=kern,
-                                             num_inducing=self._num_inducing)
+                                            num_inducing=self._num_inducing)
         self.model.Gaussian_noise.constrain_bounded(1e-9, 1e6, warning=False)
 
     def sample(self, num_samples=1, *args, **kwargs):
@@ -79,25 +91,26 @@ class BayesSampler(BaseSampler):
         return Xs
 
     def _bayes_sample(self, num_samples, num_restarts=25):
-        if self.model is None:
-            self.udpate()
         num_restarts = max(num_samples, num_restarts)
         init_params = self._random_sample(num_restarts)
         init_xs = [self.params2vec(param) for param in init_params]
         bounds = self.design_space.get_bounds()
-        evaluated_loss = self._y
+        evaluated_loss = np.array(self.model.Y)[:, 0]
         ys = []
         xs = []
 
+        def minus_ac(x):
+            return -self.acquisition_func(x, self.model,
+                                          evaluated_loss)
+
         for x0 in init_xs:
-            res = minimize(fun=self.acquisition_func,
+            res = minimize(fun=minus_ac,
                            x0=x0,
                            bounds=bounds,
-                           method='L-BFGS-B',
-                           args=(self.model, evaluated_loss))
-            ys.append(res.fun)
+                           method='L-BFGS-B')
+            ys.append(-res.fun)
             xs.append(res.x)
-        idx = np.argsort(ys)[:num_samples]
+        idx = np.argsort(ys)[:num_samples][::-1]
         best_x = np.array(xs)[idx]
         best_params = [self.vec2params(x) for x in best_x]
         return best_params
