@@ -12,7 +12,7 @@ map_func = dict(linear=lambda x: x, square=lambda x: x, sin=np.sin)
 
 def test_func(x):
     print("x", x)
-    score = np.sin(x["x2_1"]) * map_func[x["x3"]](x["x1"]) * map_func[x["x3"]](x["x2_2"])
+    score = np.sin(x["x2_1"]) + map_func[x["x3"]](x["x1"]) + map_func[x["x3"]](x["x2_2"])
     score_val = -score
     print("score_val", score_val)
     return score_val

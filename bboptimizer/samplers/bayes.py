@@ -48,7 +48,6 @@ class BayesSampler(BaseSampler):
                 sig = max(sig, eps)
                 mu = np.mean(y)
                 y = (y - mu) / sig
-            print("y", y)
             if self.model is None:
                 self._create_model(X_vec, y)
             else:
@@ -110,7 +109,7 @@ class BayesSampler(BaseSampler):
                            method='L-BFGS-B')
             ys.append(-res.fun)
             xs.append(res.x)
-        idx = np.argsort(ys)[:num_samples][::-1]
+        idx = np.argsort(ys)[::-1][:num_samples]
         best_x = np.array(xs)[idx]
         best_params = [self.vec2params(x) for x in best_x]
         return best_params
