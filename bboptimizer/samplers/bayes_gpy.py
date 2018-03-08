@@ -2,7 +2,7 @@
 # @Author: tom-hydrogen
 # @Date:   2018-03-07 10:51:02
 # @Last Modified by:   tom-hydrogen
-# @Last Modified time: 2018-03-08 14:36:47
+# @Last Modified time: 2018-03-08 18:25:31
 """ gp.py
 Bayesian optimisation of loss functions.
 """
@@ -19,14 +19,14 @@ from .utils import random_sample, expected_improvement
 from ..constants import EPSILON
 
 
-class BayesSampler(BaseSampler):
-    sampler_name = "bayes"
+class BayesGPySampler(BaseSampler):
+    sampler_name = "bayes_gpy"
 
     def __init__(self, space, init_X=None, init_y=None, r_min=3, method="EI",
                  optimizer="bfgs", max_iters=1000,
                  is_normalize=True, ARD=True, kernel=None, sparse=False,
                  num_inducing=10):
-        super(BayesSampler, self).__init__(space, init_X, init_y)
+        super(BayesGPySampler, self).__init__(space, init_X, init_y)
         self._r_min = r_min
         self.model = None
         self.acquisition_func = self._get_acquisition_func(method)
@@ -54,10 +54,12 @@ class BayesSampler(BaseSampler):
                 self._create_model(X_vec, y)
             else:
                 self.model.set_XY(X_vec, y)
-            self.model.optimize(optimizer=self._optimizer,
-                                max_iters=self._max_iters,
-                                messages=False,
-                                ipython_notebook=False)
+            self.model.optimize_restarts(25,
+                                         optimizer=self._optimizer,
+                                         max_iters=self._max_iters,
+                                         messages=False,
+                                         verbose=False,
+                                         ipython_notebook=False)
 
     def _create_model(self, X, Y):
         """
@@ -96,14 +98,14 @@ class BayesSampler(BaseSampler):
         init_params = self._random_sample(num_restarts)
         init_xs = [self.params2vec(param) for param in init_params]
         bounds = self.design_space.get_bounds()
-        print("bounds", bounds)
         evaluated_loss = np.array(self.model.Y)[:, 0]
         ys = []
         xs = []
 
         def minus_ac(x):
             return -self.acquisition_func(x, self.model,
-                                          evaluated_loss)
+                                          evaluated_loss,
+                                          mode="gpy")
 
         for x0 in init_xs:
             res = minimize(fun=minus_ac,

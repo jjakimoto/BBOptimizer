@@ -2,7 +2,7 @@
 # @Author: tom-hydrogen
 # @Date:   2018-03-07 10:51:02
 # @Last Modified by:   tom-hydrogen
-# @Last Modified time: 2018-03-08 15:11:13
+# @Last Modified time: 2018-03-08 18:25:45
 """ gp.py
 Bayesian optimisation of loss functions.
 """
@@ -77,7 +77,8 @@ class BayesSampler(BaseSampler):
 
         def minus_ac(x):
             return -self.acquisition_func(x, self.model,
-                                          evaluated_loss)
+                                          evaluated_loss,
+                                          mode="sklearn")
 
         for x0 in init_xs:
             res = minimize(fun=minus_ac,
@@ -86,6 +87,8 @@ class BayesSampler(BaseSampler):
                            method='L-BFGS-B')
             ys.append(-res.fun)
             xs.append(res.x)
+            print("max_ei", -res.fun, self.model.predict(np.array([res.x])))
+        print("##############best_ei", np.max(ys))
         idx = np.argsort(ys)[::-1][:num_samples]
         best_x = np.array(xs)[idx]
         best_params = [self.vec2params(x) for x in best_x]

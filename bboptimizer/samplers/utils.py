@@ -65,7 +65,7 @@ def random_sample(params_conf, x=None):
     return x
 
 
-def expected_improvement(x, model, evaluated_loss, jitter=0.01):
+def expected_improvement(x, model, evaluated_loss, jitter=0.01, mode="gpy"):
     """Expected improvement acquisition function.
 
     Note
@@ -85,13 +85,15 @@ def expected_improvement(x, model, evaluated_loss, jitter=0.01):
     """
 
     x = np.atleast_2d(x)
-    # mu, var = model.predict(x)
-    # Consider 1d case
-    # sigma = np.sqrt(var)[0, 0]
-    # mu = mu[0, 0]
-    mu, sig = model.predict(x, return_std=True)
-    mu = mu[0]
-    sigma = sig[0]
+    if mode == "gpy":
+        mu, var = model.predict(x)
+        # Consider 1d case
+        sigma = np.sqrt(var)[0, 0]
+        mu = mu[0, 0]
+    else:
+        mu, sig = model.predict(x, return_std=True)
+        mu = mu[0]
+        sigma = sig[0]
     # Avoid too small sigma
     if sigma == 0.:
         return 0.
