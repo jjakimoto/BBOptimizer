@@ -3,9 +3,17 @@
 Black Box Optimizer
 ===================
 
-Black-box optimization library. By defining function that responds with respect to each input, perform optimizing parameters of your models like Machine Learning algorithms.
+General black-box optimization mainly aming for optimizing hyperparameters of Machine Learning algorithms. Defining funciont to be optimized, search space, and method gives you optimal set of parameters.
 
 [![licence](https://img.shields.io/badge/licence-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+
+Current implementations
+=======================
+- Grid Search
+- Random Search [[1]](http://www.jmlr.org/papers/volume13/bergstra12a/bergstra12a.pdf)
+- Bayesian Search [[2]](https://papers.nips.cc/paper/4522-practical-bayesian-optimization-of-machine-learning-algorithms.pdf)
+
+
 
 Getting started
 ===============
@@ -17,8 +25,8 @@ Getting started
     python setup.py install
 ```
 
-Dependencies:
-------------------------
+### Dependencies:
+------------------
   - scikit-learn
   - numpy
   - scipy
@@ -33,7 +41,7 @@ pip install -r requirements.txt
 ### Example
 Let's see how to use function while going through optimizing hyperparameters of support vector machine from scikit-learn (SVC).
 
-First, we define the type of parameters from four kinds: 'continuous', 'integer', 'categorical', and 'fixed'. 'fixed' parameters will just be added to additional parameters for score function and not be included in optimization. Here is the example:
+First, we define the type of parameters from four kinds: `continuous`, `integer`, `categorical`, and `fixed`. `fixed` parameters will just be added to additional parameters for score function and not be included in optimization. Here is the example:
 ```python
 space_conf = [
     {'name': 'C', 'domain': (1e-8, 1e5), 'type': 'continuous', 'scale': 'log'},
@@ -41,7 +49,7 @@ space_conf = [
     {'name': 'kernel', 'domain': 'rbf', 'type': 'fixed'}
 ]
 ```
-If you define {'scale': 'log'}, the paramter is optimized and sampled after transfomred 10 ** x.
+If you define `{'scale': 'log'}`, the paramter is optimized and sampled after transfomred `10 ** x`.
 
 Next we need to define a problem to be optimized. Score function has to get argument in the dictionary format and then return scalar values (currently support only single output case). Here is the example of accuracy score function of support vector machine classifier.
 
@@ -101,15 +109,14 @@ kwargs:
     These parameteres are sent to sampler object
 ```
 
-`sampler` and 'backend' parameters are especially imporant.
+`sampler` and `backend` parameters mainly define your optimization method.
 
-`sampler` parameter defines which optimization in use. It has the following options: 'grid', random', and 'bayes'.
+`sampler` parameter defines which optimization in use. It has the following options: `grid`, `random`, and `bayes`.
 
-`backend` parameter just determines which gaussian process to use for bayesian optimization. It has to be either of 'gpy' or 'sklearn'. Default is `sklearn`.
+`backend` parameter just determines which gaussian process to use for bayesian optimization. It has to be either of `gpy` or `sklearn`. Default is `sklearn`.
 
 
-
-### Current implementations
-- Grid Search
-- Random Search [1](http://www.jmlr.org/papers/volume13/bergstra12a/bergstra12a.pdf)
-- Bayesian Search [2](https://papers.nips.cc/paper/4522-practical-bayesian-optimization-of-machine-learning-algorithms.pdf)
+### References
+[1] [Random Search for Hyper-Parameter Optimization](http://www.jmlr.org/papers/volume13/bergstra12a/bergstra12a.pdf)
+[2] [Practical Bayesian Optimization of Machine
+Learning Algorithms](https://papers.nips.cc/paper/4522-practical-bayesian-optimization-of-machine-learning-algorithms.pdf)
