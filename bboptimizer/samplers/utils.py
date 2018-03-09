@@ -90,10 +90,12 @@ def expected_improvement(x, model, evaluated_loss, jitter=0.01, mode="gpy"):
         # Consider 1d case
         sigma = np.sqrt(var)[0, 0]
         mu = mu[0, 0]
-    else:
+    elif mode == "sklearn":
         mu, sig = model.predict(x, return_std=True)
         mu = mu[0]
         sigma = sig[0]
+    else:
+        raise ValueError()
     # Avoid too small sigma
     if sigma == 0.:
         return 0.
