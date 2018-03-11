@@ -1,7 +1,7 @@
 Black Box Optimizer
 ===================
 
-General black-box optimization mainly aiming for optimizing hyperparameters of Machine Learning algorithms. Defining function to be optimized, search space, and method gives you optimal set of parameters.
+General black-box optimization mainly aiming for optimizing hyperparameters of Machine Learning algorithms.
 
 [![license](https://img.shields.io/badge/licence-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
