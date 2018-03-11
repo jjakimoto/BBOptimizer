@@ -2,7 +2,7 @@
 # @Author: tom-hydrogen
 # @Date:   2018-03-02 14:11:04
 # @Last Modified by:   tom-hydrogen
-# @Last Modified time: 2018-03-06 16:59:35
+# @Last Modified time: 2018-03-07 12:07:59
 import numpy as np
 import math
 from copy import deepcopy
@@ -16,9 +16,6 @@ class Variable(object):
         self.dimensionality = dimensionality
 
     def is_continuous(self):
-        return False
-
-    def is_bandit(self):
         return False
 
     def expand(self):
@@ -107,9 +104,6 @@ class NumericalVariable(Variable):
     def is_continuous(self):
         return True
 
-    def is_bandit(self):
-        return False
-
     def get_possible_values(self):
         raise AttributeError("Impossible to produce a list of values for continuous variable " + self.name)
 
@@ -170,49 +164,6 @@ class IntegerVariable(NumericalVariable):
         return [int(round(val))]
 
 
-class BanditVariable(Variable):
-    def __init__(self, name, domain, dimensionality=None):
-        dims = np.array([len(d) for d in domain])
-        if not np.all(dims == dims[0]):
-            raise ValueError('The dimensionalities of the bandit variable ' + name + ' have to be the same!')
-
-        if dimensionality is None:
-            dimensionality = len(domain[0])
-
-        super(BanditVariable, self).__init__(name, 'bandit', domain, dimensionality)
-
-    def objective_to_model(self, x_objective):
-        return x_objective
-
-    def is_bandit(self):
-        return True
-
-    def model_to_objective(self, x_model):
-        return x_model
-
-    def expand(self):
-        one_d_variable = BanditVariable(self.name, self.domain, None)
-        one_d_variable.dimensionality_in_model = self.domain.shape[1]
-
-        return [one_d_variable]
-
-    def get_bounds(self):
-        return [(min(self.domain[:,d]), max(self.domain[:, d])) for d in range(self.domain.shape[1])]
-
-    def get_possible_values(self):
-        return self.domain
-
-    def round(self, value_array):
-        """
-        Rounds a bandit variable by selecting the closest point in the domain
-        Closest here is defined by euclidian distance
-        Assumes an 1d array of the same length as the single variable value
-        """
-        distances = np.linalg.norm(np.array(self.domain) - value_array, axis=1)
-        idx = np.argmin(distances)
-        return [self.domain[idx]]
-
-
 class DiscreteVariable(Variable):
     def __init__(self, name, domain, dimensionality=1):
         super(DiscreteVariable, self).__init__(name, 'discrete', domain, dimensionality)
@@ -222,9 +173,6 @@ class DiscreteVariable(Variable):
 
     def get_possible_values(self):
         return self.domain
-
-    def is_bandit(self):
-        return False
 
     def round(self, value_array):
         """
@@ -272,9 +220,6 @@ class CategoricalVariable(Variable):
     def get_possible_values(self):
         return np.eye(len(self.domain))
 
-    def is_bandit(self):
-        return False
-
     def round(self, value_array):
         """
         Rounds a categorical variable by setting to one the max of the given vector and to zero the rest of the entries.
@@ -306,8 +251,6 @@ def create_variable(descriptor):
         return ContinuousVariable(descriptor['name'], descriptor['domain'], descriptor.get('dimensionality', 1), descriptor.get('scale', None))
     elif descriptor['type'] == 'integer':
         return IntegerVariable(descriptor['name'], descriptor['domain'], descriptor.get('dimensionality', 1), descriptor.get('scale', None))
-    elif descriptor['type'] == 'bandit':
-        return BanditVariable(descriptor['name'], descriptor['domain'], descriptor.get('dimensionality', None))  # bandits variables cannot be repeated
     elif descriptor['type'] == 'discrete':
         return DiscreteVariable(descriptor['name'], descriptor['domain'], descriptor.get('dimensionality', 1))
     elif descriptor['type'] == 'categorical':

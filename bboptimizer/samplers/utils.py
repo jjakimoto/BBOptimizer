@@ -1,6 +1,7 @@
 from collections import defaultdict
 import numpy as np
 import random
+from scipy.stats import norm
 
 
 SAMPLERS_MAP = dict()
@@ -62,3 +63,44 @@ def random_sample(params_conf, x=None):
     else:
         x = _random_sample(params_conf)
     return x
+
+
+def expected_improvement(x, model, evaluated_loss, jitter=0.01, mode="gpy"):
+    """Expected improvement acquisition function.
+
+    Note
+    ----
+    This implementation aims for minimization
+
+    Parameters:
+    ----------
+    x: array-like, shape = (n_hyperparams,)
+    model: GaussianProcessRegressor object.
+        Gaussian process trained on previously evaluated hyperparameters.
+    evaluated_loss: array-like(float), shape = (# historical results,).
+         the values of the loss function for the previously evaluated
+         hyperparameters.
+    jitter: float
+        positive value to make the acquisition more explorative.
+    """
+
+    x = np.atleast_2d(x)
+    if mode == "gpy":
+        mu, var = model.predict(x)
+        # Consider 1d case
+        sigma = np.sqrt(var)[0, 0]
+        mu = mu[0, 0]
+    elif mode == "sklearn":
+        mu, sig = model.predict(x, return_std=True)
+        mu = mu[0]
+        sigma = sig[0]
+    else:
+        raise ValueError()
+    # Avoid too small sigma
+    if sigma == 0.:
+        return 0.
+    else:
+        loss_optimum = np.min(evaluated_loss)
+        gamma = (loss_optimum - mu - jitter) / sigma
+        ei_val = sigma * (gamma * norm.cdf(gamma) + norm.pdf(gamma))
+        return ei_val
