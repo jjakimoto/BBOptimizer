@@ -1,11 +1,9 @@
-# BBoptimizer
-
 Black Box Optimizer
 ===================
 
-General black-box optimization mainly aming for optimizing hyperparameters of Machine Learning algorithms. Defining funciont to be optimized, search space, and method gives you optimal set of parameters.
+General black-box optimization mainly aiming for optimizing hyperparameters of Machine Learning algorithms. Defining function to be optimized, search space, and method gives you optimal set of parameters.
 
-[![licence](https://img.shields.io/badge/licence-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![license](https://img.shields.io/badge/licence-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 Current implementations
 =======================
@@ -49,7 +47,7 @@ space_conf = [
     {'name': 'kernel', 'domain': 'rbf', 'type': 'fixed'}
 ]
 ```
-If you define `{'scale': 'log'}`, the paramter is optimized and sampled after transfomred `10 ** x`.
+If you define `{'scale': 'log'}`, the parameter is optimized and sampled after transformed into `10 ** x`. We also have dimensionality option. If you add `{'dimensionality': N}`, for variable `x`, you would use `x_1`, `x_2`, ..., `x_N` with the same search  space.
 
 Next we need to define a problem to be optimized. Score function has to get argument in the dictionary format and then return scalar values (currently support only single output case). Here is the example of accuracy score function of support vector machine classifier.
 
@@ -73,7 +71,6 @@ def score_func(params):
     train_target = target[train_idx]
     clf = SVC(**params)
     clf.fit(train_data, train_target)
-
     pred = clf.predict(data[test_idx])
     true_y = target[test_idx]
     score = accuracy_score(true_y, pred)
@@ -89,7 +86,7 @@ opt = Optimizer(score_func, params_conf, sampler="bayes",
 opt.search(num_iter=20)
 ```
 
-Here is the list of `Optimizer`'s __init__ arguments
+Here is the list of `Optimizer`'s `__init__` arguments
 ```text
 score_func : function
     Takes dictionary as input and returns scalar score.
@@ -99,24 +96,23 @@ space: list(dict)
 sampler: str
     The name of sample to use: 'grid', 'random', and 'bayes'
 init_X: array-like(float), shape=(n_samples, n_dim)
-    The list of parameters to initizlie sampler
+    The list of parameters to initialize sampler
 init_y: array-like(float), shape(n_samples,)
     The list of score of init_X
 timeout: int, optional
     If specified, it terminates score evaluation after
     timeout seconds has passed.
 kwargs:
-    These parameteres are sent to sampler object
+    These parameters are sent to sampler object
 ```
 
 `sampler` and `backend` parameters mainly define your optimization method.
 
 `sampler` parameter defines which optimization in use. It has the following options: `grid`, `random`, and `bayes`.
 
-`backend` parameter just determines which gaussian process to use for bayesian optimization. It has to be either of `gpy` or `sklearn`. Default is `sklearn`.
+`backend` parameter just determines which gaussian process to use for bayesian optimization. It has to be either of `gpy` or `sklearn`. Default is `gpy`.
 
 
 ### References
-[1] [Random Search for Hyper-Parameter Optimization](http://www.jmlr.org/papers/volume13/bergstra12a/bergstra12a.pdf)
-[2] [Practical Bayesian Optimization of Machine
-Learning Algorithms](https://papers.nips.cc/paper/4522-practical-bayesian-optimization-of-machine-learning-algorithms.pdf)
+- [1] [Random Search for Hyper-Parameter Optimization](http://www.jmlr.org/papers/volume13/bergstra12a/bergstra12a.pdf)
+- [2] [Practical Bayesian Optimization of Machine Learning Algorithms](https://papers.nips.cc/paper/4522-practical-bayesian-optimization-of-machine-learning-algorithms.pdf)

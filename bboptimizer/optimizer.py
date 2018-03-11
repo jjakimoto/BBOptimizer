@@ -71,9 +71,10 @@ class Optimizer(object):
 
     def __init__(self, score_func, space,
                  sampler="random", init_X=None, init_y=None,
-                 timeout=None, **kwargs):
+                 maximize=False, timeout=None, **kwargs):
         self._score_func = score_func
         self._space_conf = space
+        self._maximize = maximize
         self._timeout = timeout
         # Separate fixed params
         self.fixed_params = dict()
@@ -136,6 +137,10 @@ class Optimizer(object):
                     continue
             self.sampler.update(sucess_Xs, ys)
         Xs, ys = self.sampler.data
+        best_idx = np.argmin(ys)
+        # Default is minimization
+        if self._maximize:
+            ys = -ys
         # Update with  fixed parameters
         fixed_params = deepcopy(self.fixed_params)
         for X in Xs:
@@ -143,7 +148,6 @@ class Optimizer(object):
         if return_full:
             return Xs, ys
         else:
-            best_idx = np.argmin(ys)
             best_X = Xs[best_idx]
             best_y = ys[best_idx]
             return best_X, best_y
@@ -156,6 +160,9 @@ class Optimizer(object):
         def record(que):
             try:
                 score = self._score_func(X, *args, **kwargs)
+                # Default is minimization
+                if self._maximize:
+                    score = -score
             except Exception as e:
                 score = e
             que.put(score)
@@ -177,3 +184,27 @@ class Optimizer(object):
                 print("Error at score_func", response)
                 raise response
             return response
+
+    @property
+    def results(self):
+        best_X = []
+        best_y = []
+        X, y = self.sampler.data
+        for i in range(len(y)):
+            idx = np.argmin(y[:i + 1])
+            best_X.append(X[idx])
+            best_y.append(y[idx])
+        best_y = np.array(best_y)
+        if self._maximize:
+            best_y = -best_y
+        return best_X, best_y
+
+    @property
+    def best_results(self):
+        X, y = self.sampler.data
+        idx = np.argmin(y)
+        best_X = X[idx]
+        best_y = y[idx]
+        if self._maximize:
+            best_y = -best_y
+        return best_X, best_y

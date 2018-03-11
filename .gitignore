@@ -24,6 +24,10 @@
 *.meta
 *.index
 *.ckpt*
+*.jpg
+*.png
+*.csv
+*.tsv
 # Logs and databases #
 ######################
 .ipynb_checkpoints

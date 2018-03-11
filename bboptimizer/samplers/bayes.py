@@ -42,7 +42,7 @@ class BayesSampler(BaseSampler):
         If ture, normalized score values are used for optimization
     n_restarts_optimizer: int
         The number of trial to opimize GP hyperparameters
-    backend: str (default sklearn)
+    backend: str (default 'gpy')
         Determine which GP package is used. That has to be
         either of 'gpy' or 'sklearn'.
     optimizer: str
@@ -65,7 +65,7 @@ class BayesSampler(BaseSampler):
 
     def __init__(self, space, init_X=None, init_y=None, r_min=3, method="EI",
                  kernel=None, is_normalize=True, n_restarts_optimizer=10,
-                 backend="sklearn", optimizer="bfgs", max_iters=1000,
+                 backend="gpy", optimizer="bfgs", max_iters=1000,
                  ARD=False, sparse=False,
                  num_inducing=10, random_state=RANDOM_STATE):
         super(BayesSampler, self).__init__(space, init_X, init_y)

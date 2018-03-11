@@ -49,8 +49,8 @@ class GridSampler(BaseSampler):
                 if "num_grid" in conf:
                     scale = conf.get("scale", None)
                     if scale == 'log':
-                        domain = np.logspace(domain[0],
-                                             domain[1],
+                        domain = np.logspace(np.log10(domain[0]),
+                                             np.log10(domain[1]),
                                              conf["num_grid"])
                     else:
                         domain = np.linspace(domain[0],

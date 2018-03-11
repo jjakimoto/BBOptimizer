@@ -1,5 +1,6 @@
 from abc import ABCMeta, abstractmethod
 from copy import deepcopy
+import numpy as np
 
 from ..space import DesignSpace
 from .utils import register
@@ -35,13 +36,12 @@ class BaseSampler(object, metaclass=ABCMeta):
         self._y.extend(new_y)
         self._update(new_X, new_y)
 
-    @abstractmethod
     def _update(self, new_X, new_y):
-        raise NotImplementedError()
+        pass
 
     @property
     def data(self):
-        return self._X, self._y
+        return self._X, np.array(self._y)
 
     @property
     def num_data(self):

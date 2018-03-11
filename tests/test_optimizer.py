@@ -7,7 +7,7 @@ from bboptimizer import Optimizer
 from bboptimizer.constants import RANDOM_STATE
 
 
-map_func = dict(linear=lambda x: x, square=lambda x: x, sin=np.sin)
+map_func = dict(linear=lambda x: x, square=lambda x: x**2, sin=np.sin)
 
 
 def test_func(x):
@@ -35,7 +35,8 @@ class TestBayesOptimizer(unittest.TestCase):
     def test_search(self):
         self.init_params['score_func'] = test_func
         self.init_params['space'] = deepcopy(params_conf)
-        bayes_optimizer = Optimizer(sampler="bayes", **self.init_params)
+        bayes_optimizer = Optimizer(sampler="bayes", backend="gpy",
+                                    **self.init_params)
         # Search parameters
         np.random.seed(RANDOM_STATE)
         random.seed(RANDOM_STATE)
