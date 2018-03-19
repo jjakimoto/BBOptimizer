@@ -157,33 +157,38 @@ class Optimizer(object):
         X = deepcopy(X)
         X.update(fixed_params)
 
-        def record(que):
-            try:
-                score = self._score_func(X, *args, **kwargs)
-                # Default is minimization
-                if self._maximize:
-                    score = -score
-            except Exception as e:
-                score = e
-            que.put(score)
-
-        que = Queue()
-        proc = Process(target=record, args=(que,))
-        proc.start()
         if self._timeout is not None:
+            def record(que):
+                try:
+                    score = self._score_func(X, *args, **kwargs)
+                    # Default is minimization
+                    if self._maximize:
+                        score = -score
+                except Exception as e:
+                    score = e
+                que.put(score)
+
+            que = Queue()
+            proc = Process(target=record, args=(que,))
+            proc.start()
             proc.join(self.timeout)
+            if proc.is_alive():
+                proc.terminate()
+                proc.join()
+                raise TimelimitError()
+            else:
+                response = que.get()
+                if isinstance(response, Exception):
+                    print("Error at score_func", response)
+                    raise response
+                else:
+                    score = response
         else:
-            proc.join()
-        if proc.is_alive():
-            proc.terminate()
-            proc.join()
-            raise TimelimitError()
-        else:
-            response = que.get()
-            if isinstance(response, Exception):
-                print("Error at score_func", response)
-                raise response
-            return response
+            score = self._score_func(X, *args, **kwargs)
+            # Default is minimization
+            if self._maximize:
+                score = -score
+        return score
 
     @property
     def results(self):
